@@ -140,6 +140,8 @@ module.exports = function(RED) {
                             post[command] = payload;
                         }
                         if (parseInt(config.transitionTime) >= 0) {
+                            if (command == 'on' && payload === true) { console.log('Cannot use transition when no brightness is set.') }
+                            if (command == 'on' && payload === false) { post['bri'] = 0; }
                             post['transitiontime'] = parseInt(config.transitionTime);
                         }
 
