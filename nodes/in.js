@@ -15,6 +15,8 @@ module.exports = function(RED) {
                 node.server.on('onSocketOpen', () => this.onSocketOpen());
                 node.server.on('onSocketPongTimeout', () => this.onSocketPongTimeout());
                 node.server.on('onNewDevice', (uniqueid) => this.onNewDevice(uniqueid));
+
+                node.sendLastState(); //tested for duplicate send with onSocketOpen
             } else {
                 node.status({
                     fill: "red",
@@ -34,7 +36,7 @@ module.exports = function(RED) {
                     node.meta = deviceMeta;
                     if (node.config.outputAtStartup) {
                         setTimeout(function () {
-                            node.sendState(deviceMeta);
+                            node.sendState(deviceMeta,true);
                         }, 1500); //we need this timeout after restart of node-red  (homekit delays)
                     } else {
                         setTimeout(function () {
@@ -92,14 +94,14 @@ module.exports = function(RED) {
             }
         };
 
-        sendState(device) {
+        sendState(device,force=false) {
             var node = this;
             device = node.getState(device);
             if(!device) { return; }
 
             //filter output
-            if ('onchange' === node.config.output && device.state[node.config.state] === node.oldState) return;
-            if ('onupdate' === node.config.output && device.state['lastupdated'] === node.prevUpdateTime) return;
+            if (!force && 'onchange' === node.config.output && device.state[node.config.state] === node.oldState) return;
+            if (!force && 'onupdate' === node.config.output && device.state['lastupdated'] === node.prevUpdateTime) return;
 
             //outputs
             node.send([
